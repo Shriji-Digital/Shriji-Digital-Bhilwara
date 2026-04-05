@@ -210,7 +210,7 @@
           <option value="" disabled selected>Select a Category...</option>
           ${window.categories.map(c=>`<option value='${c.id}'>${c.name}</option>`).join("")}
         </select>
-        <div style="text-align:left; margin-bottom:10px;"><small style="color:var(--text-muted);">Upload Image (Max 1MB)</small></div>
+        <div style="text-align:left; margin-bottom:10px;"><small style="color:var(--text-muted);">Upload Image (Max 5MB)</small></div>
         <input type='file' id='pimg' accept='image/*' style="background:white;">
         <button class='btn' onclick='window.addProduct()'>Save to Cloud</button>
         <button class='btn btn-danger' onclick="document.getElementById('productForm').innerHTML=''">Cancel</button>
@@ -226,7 +226,7 @@
 
     if(!name || !price || !catVal){alert("Please fill out name, price, and category.");return;}
     if(!file||!file.type.startsWith("image/")){alert("Please upload a valid image.");return;}
-    if(file.size > 1*1024*1024){alert("Image is too large! Max 1MB allowed.");return;}
+    if(file.size > 5*1024*1024){alert("Image is too large! Max 5MB allowed.");return;}
     
     const reader = new FileReader();
     reader.onload = ()=>{
@@ -244,7 +244,6 @@
     reader.readAsDataURL(file);
   }
 
-  /* --- NEW EDIT FUNCTIONALITY --- */
   window.showEditProduct = function(id){
     let p = window.products.find(x => x.id === id);
     if(!p) return;
@@ -257,7 +256,7 @@
         <select id='editPcategory'>
           ${window.categories.map(c=>`<option value='${c.id}' ${c.id === p.categoryId ? 'selected' : ''}>${c.name}</option>`).join("")}
         </select>
-        <div style="text-align:left; margin-bottom:10px;"><small style="color:var(--text-muted);">Upload New Image (Leave blank to keep old image, Max 1MB)</small></div>
+        <div style="text-align:left; margin-bottom:10px;"><small style="color:var(--text-muted);">Upload New Image (Leave blank to keep old image, Max 5MB)</small></div>
         <input type='file' id='editPimg' accept='image/*' style="background:white;">
         <button class='btn' style='background: var(--secondary);' onclick='window.updateProduct(${p.id})'>Update Cloud</button>
         <button class='btn btn-danger' onclick="document.getElementById('productForm').innerHTML=''">Cancel</button>
@@ -284,7 +283,7 @@
 
     if(file) {
       if(!file.type.startsWith("image/")){alert("Please upload a valid image.");return;}
-      if(file.size > 1*1024*1024){alert("Image is too large! Max 1MB allowed.");return;}
+      if(file.size > 5*1024*1024){alert("Image is too large! Max 5MB allowed.");return;}
       const reader = new FileReader();
       reader.onload = ()=>{
         p.img = reader.result;
@@ -327,11 +326,22 @@
     displayProducts(results, "productsGrid", false);
   }
 
+  /* --- NEW FILTER FUNCTION --- */
+  window.filterByCategory = function(catId){
+    if(catId === null) {
+      displayProducts(window.products, "productsGrid", false);
+    } else {
+      let results = window.products.filter(p => p.categoryId === catId);
+      displayProducts(results, "productsGrid", false);
+    }
+    // Scroll down to the products grid smoothly
+    document.getElementById("productsGrid").scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function displayProducts(list, elementId, isManager){
     document.getElementById(elementId).innerHTML = list.map(p=>{
       let catName = window.categories.find(c=>c.id===p.categoryId)?.name || "Uncategorized";
       
-      // Changed to include the Edit button for Managers
       let buttons = isManager ? 
         `<button class='btn' style='background: var(--secondary); margin-bottom: 8px;' onclick='window.showEditProduct(${p.id})'>✏️ Edit Product</button>
          <button class='btn btn-danger' onclick='window.deleteProduct(${p.id})'>🗑️ Delete</button>` 
@@ -358,13 +368,17 @@
   }
 
   window.render = function(){
-    document.getElementById("categoryViewGrid").innerHTML = window.categories.map(c=>`
-      <div class='card' style='justify-content: center; min-height: 120px;'>
+    // Create the "All Categories" button, plus a button for every real category
+    document.getElementById("categoryViewGrid").innerHTML = `
+      <div class='card' style='justify-content: center; min-height: 120px; cursor: pointer;' onclick='window.filterByCategory(null)'>
+        <h3 style='margin:0; font-size:1.6rem;'>🌟 All Categories</h3>
+        <p style='margin-top:10px;'>🏷️ ${window.products.length} Total Items</p>
+      </div>` + 
+      window.categories.map(c=>`
+      <div class='card' style='justify-content: center; min-height: 120px; cursor: pointer;' onclick='window.filterByCategory(${c.id})'>
         <h3 style='margin:0; font-size:1.6rem;'>${c.name}</h3>
         <p style='margin-top:10px;'>🏷️ ${window.products.filter(p=>p.categoryId===c.id).length} Items</p>
       </div>`).join("");
-      
-    if(window.categories.length === 0) document.getElementById("categoryViewGrid").innerHTML = "<p style='grid-column: 1/-1;'>No categories available.</p>";
 
     displayProducts(window.products, "productsGrid", false);
 
@@ -379,4 +393,4 @@
   }
 </script>
 </body>
-  </html>
+    </html>
